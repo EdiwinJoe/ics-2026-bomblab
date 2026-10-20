@@ -14,3 +14,7 @@ __pycache__/
 !/teaching/*.c
 !/teaching/Makefile
 !/teaching/README.md
+
+# 调试产物，不提交
+*.S
+input.txt
