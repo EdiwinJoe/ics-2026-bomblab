@@ -75,11 +75,30 @@ int solve_phase_3(uint64_t challenge, char *out, size_t cap) {
     return write_answer(out, cap, values, count);
 }
 
+/* 第 4 关：二分式递归。
+   mid = lo + (hi-lo)/2；命中返回 (mid+0x4c)^salt；
+   否则按大小走右半/左半，回程再 3*ret ^ (mid+salt) ^ 0x5 / 0x11。 */
+static uint32_t p4_walk(uint32_t target, int32_t lo, int32_t hi, uint32_t salt) {
+    int32_t mid = lo + ((hi - lo) >> 1);
+    if ((uint32_t)mid == target)
+        return (uint32_t)(mid + 0x4c) ^ salt;
+    if (target > (uint32_t)mid) {
+        uint32_t r = p4_walk(target, mid + 1, hi, salt);
+        return ((3u * r) ^ (uint32_t)(mid + salt)) ^ 0x5u;
+    } else {
+        uint32_t r = p4_walk(target, lo, mid - 1, salt);
+        return ((3u * r) ^ (uint32_t)(mid + salt)) ^ 0x11u;
+    }
+}
+
 int solve_phase_4(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
-    size_t count = 0;
-    (void)challenge;
-    // TODO: 根据 phase_04 的汇编，用 challenge 算出口令中的各个整数，依次存入 values，并把 count 改为整数个数。
+    size_t count = 1;                          /* 本关只要 1 个整数 */
+
+    uint32_t target = (uint32_t)(challenge & 0x7f);
+    uint32_t salt   = (uint32_t)(challenge >> 7) ^ (uint32_t)(challenge >> 32);
+
+    values[0] = p4_walk(target, 0, 0x7f, salt);
     return write_answer(out, cap, values, count);
 }
 
