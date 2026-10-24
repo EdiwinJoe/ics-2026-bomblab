@@ -102,11 +102,45 @@ int solve_phase_4(uint64_t challenge, char *out, size_t cap) {
     return write_answer(out, cap, values, count);
 }
 
+typedef struct { uint32_t a, b; int next; } p5_node;
+static const p5_node p5_nodes[] = {
+    { 0x00001964u, 0x00000626u,  6 },
+    { 0x000093c4u, 0x00000974u, 11 },
+    { 0x0000fce8u, 0x00000224u,  9 },
+    { 0x000087fdu, 0x0000033fu,  7 },
+    { 0x00004badu, 0x00000529u,  5 },
+    { 0x00008facu, 0x00000b32u,  8 },
+    { 0x0000b8fbu, 0x0000084bu,  3 },
+    { 0x0000f95fu, 0x00000a73u, 10 },
+    { 0x0000f7afu, 0x00000166u, -1 },
+    { 0x00000812u, 0x00000737u,  1 },
+    { 0x00003f96u, 0x00000037u,  2 },
+    { 0x00007b65u, 0x00000478u,  4 },
+};
+static const int p5_heads[8] = { 0, 6, 3, 7, 10, 2, 9, 1 };
+
 int solve_phase_5(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
-    size_t count = 0;
-    (void)challenge;
-    // TODO: 根据 phase_05 的汇编，用 challenge 算出口令中的各个整数，依次存入 values，并把 count 改为整数个数。
+    size_t count = 2;
+
+    uint32_t acc = (uint32_t)(challenge >> 6) ^ (uint32_t)(challenge >> 32);
+    int node = p5_heads[challenge & 7];
+
+    acc ^= p5_nodes[node].a;
+    acc ^= 0xdb31u;
+    acc += p5_nodes[node].b;
+    uint32_t last = p5_nodes[node].b;
+
+    unsigned steps = (unsigned)((challenge >> 3) & 0xFFFFFFFFu) & 3u;
+    for (unsigned i = 0; i < steps; ++i) {
+        node = p5_nodes[node].next;
+        acc ^= p5_nodes[node].a;
+        acc += p5_nodes[node].b;
+        last = p5_nodes[node].b;
+    }
+
+    values[0] = acc;
+    values[1] = last;
     return write_answer(out, cap, values, count);
 }
 
